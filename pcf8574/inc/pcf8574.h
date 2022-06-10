@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 
-/**
+/*!
   * @brief PCF8574 status enumeration
   */
 typedef enum {
@@ -19,7 +19,7 @@ typedef enum {
 	PCF8574_ERROR,
 } pcf8574_status;
 
-/**
+/*!
   * @brief PCF8574 pins enumeration
   */
 typedef enum {
@@ -35,7 +35,7 @@ typedef enum {
 	PCF8574_PIN_COUNT
 } pcf8574_pin;
 
-/**
+/*!
   * @brief PCF8574 pin directions enumeration
   */
 typedef enum {
@@ -43,7 +43,7 @@ typedef enum {
 	PCF8574_PIN_OUTPUT
 } pcf8574_pin_direction;
 
-/**
+/*!
   * @brief PCF8574 pin status enumeration
   */
 typedef enum {
@@ -51,7 +51,7 @@ typedef enum {
 	PCF8574_PIN_SET
 } pcf8574_pin_state;
 
-/**
+/*!
   * @brief PCF8574 configuration structure definition
   */
 typedef struct {
@@ -60,10 +60,35 @@ typedef struct {
 } pcf8574_config;
 
 
+/*!
+ * @brief Initializes the PCF8574 module and internal state.
+ *
+ * This function configures the pins, an I2C peripheral and 
+ * the interrupts required for operation.
+ *
+ * @param config PCF8574 configure structure.
+ */
 pcf8574_status PCF8574_init(pcf8574_config *config);
 
+/*!
+ * @brief Changes the status of a pin.
+ *
+ * This function changes the status of a pin. The pin must be previously 
+ * configured as an output.
+ *
+ * @param pin PCF8574 pin enumeration.
+ * @param pin_state PCF8574 pin state enumeration.
+ */
 pcf8574_status PCF8574_pin_write(pcf8574_pin pin, pcf8574_pin_state pin_state);
 
+/*!
+ * @brief Reads the status of a pin.
+ *
+ * This function reads the status of a pin.
+ *
+ * @param pin PCF8574 pin enumeration.
+ * @retval PCF8574 pin state enumeration.
+ */
 pcf8574_pin_state PCF8574_pin_read(pcf8574_pin pin);
 
 void PCF8574_interrupt_hook(void);

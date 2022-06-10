@@ -21,7 +21,7 @@ typedef struct {
 	bool reset;
 } pcf8574_state;
 
-
+/* Driver status. */
 static pcf8574_state status;
 
 
@@ -49,7 +49,7 @@ pcf8574_status PCF8574_init(pcf8574_config *config) {
 	status.register_tx = register_tx;
 	status.register_rx = register_tx;
 
-	/* Writing configuration to the device */
+	/* Writing configuration to the device. */
 	pcf8574_status write_status = PCF8574_PORT_write_register(&status.register_tx);
 
 	return write_status;
@@ -57,10 +57,12 @@ pcf8574_status PCF8574_init(pcf8574_config *config) {
 
 pcf8574_status PCF8574_pin_write(pcf8574_pin pin, pcf8574_pin_state pin_state) {
 	if (status.busy) {
+		/* The I2C bus is busy. */
 		return PCF8574_ERROR;
 	}
 
 	if (status.pin_directions[pin] != PCF8574_PIN_OUTPUT) {
+		/* The pins configured as inputs cannot be written to. */
 		return PCF8574_ERROR;
 	}
 
@@ -79,8 +81,8 @@ pcf8574_status PCF8574_pin_write(pcf8574_pin pin, pcf8574_pin_state pin_state) {
 		}
 	}
 
+	/* Writing configuration to the device. */
 	status.register_tx = register_tx;
-
 	pcf8574_status write_status = PCF8574_PORT_write_register(&status.register_tx);
 
 	return write_status;
@@ -96,16 +98,25 @@ pcf8574_pin_state PCF8574_pin_read(pcf8574_pin pin) {
 }
 
 void PCF8574_interrupt_hook(void) {
+	/* The device detected a level change on some pin.
+	 * This function triggers a reading of the device register.
+	 */
 	status.busy = true;
 	PCF8574_PORT_read_register(&status.register_rx);
 }
 
 void PCF8574_rx_transfer_completed_hook(void) {
+	/* The reading of the device register has been completed.
+	 * The driver status is updated.
+	 */
 	status.pin_states_updated = false;
 	status.busy = false;
 }
 
 void PCF8574_tx_transfer_completed_hook(void) {
+	/* The writing of the device register has been completed.
+	 * The driver status is updated.
+	 */
 	status.busy = false;
 }
 
