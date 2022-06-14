@@ -10,15 +10,16 @@
 #include "pcf8574_cfg.h"
 #include "stm32f4xx_hal.h"
 
-#include "serial.h"
-
 #include <string.h>
+
+#define I2C_ADDRESS (((uint32_t) PCF8574_ADDRESS) << 1)
 
 
 I2C_HandleTypeDef i2c_handle = {0};
 
 
 void PCF8574_PORT_init_pins(void) {
+	/* Initializes I2C pins. */
 	__HAL_RCC_GPIOF_CLK_ENABLE();
 
 	GPIO_InitTypeDef gpio_i2c = {
@@ -31,6 +32,7 @@ void PCF8574_PORT_init_pins(void) {
 
 	HAL_GPIO_Init(GPIOF, &gpio_i2c);
 
+	/* Initializes INT pin. */
 	GPIO_InitTypeDef gpio_int = {
 			.Pin = GPIO_PIN_2,
 			.Mode = GPIO_MODE_IT_FALLING,
@@ -46,7 +48,7 @@ pcf8574_status PCF8574_PORT_init_i2c(void) {
 
 	/* I2C configuration */
 	i2c_handle.Instance = I2C2;
-	i2c_handle.Init.ClockSpeed = 10000;
+	i2c_handle.Init.ClockSpeed = I2C_SPEED_HZ;
 	i2c_handle.Init.DutyCycle = I2C_DUTYCYCLE_2;
 	i2c_handle.Init.OwnAddress1 = 0;
 	i2c_handle.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -80,17 +82,14 @@ pcf8574_status PCF8574_PORT_init_i2c(void) {
 }
 
 void PCF8574_PORT_enable_interrupts(void) {
+	/* Enabling i2c related interrupts */
 	HAL_NVIC_EnableIRQ(I2C2_EV_IRQn);
+	/* Enabling GPIO interrupt */
 	HAL_NVIC_EnableIRQ(EXTI2_IRQn);
 }
 
-void PCF8574_PORT_disable_interrupts(void) {
-	HAL_NVIC_DisableIRQ(I2C2_EV_IRQn);
-	HAL_NVIC_DisableIRQ(EXTI2_IRQn);
-}
-
 pcf8574_status PCF8574_PORT_write_register(uint8_t *data) {
-	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit_IT(&i2c_handle, PCF8574_I2C_ADDRESS, data, 1);
+	HAL_StatusTypeDef status = HAL_I2C_Master_Transmit_IT(&i2c_handle, I2C_ADDRESS, data, 1);
 
 	if (status != HAL_OK) {
 		return PCF8574_ERROR;
@@ -100,7 +99,7 @@ pcf8574_status PCF8574_PORT_write_register(uint8_t *data) {
 }
 
 void PCF8574_PORT_read_register(uint8_t *data) {
-	HAL_I2C_Master_Receive_IT(&i2c_handle, PCF8574_I2C_ADDRESS, data, 1);
+	HAL_I2C_Master_Receive_IT(&i2c_handle, I2C_ADDRESS, data, 1);
 }
 
 void I2C2_EV_IRQHandler(void) {
@@ -119,4 +118,3 @@ void EXTI2_IRQHandler(void) {
 	__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_2);
 	PCF8574_interrupt_hook();
 }
-

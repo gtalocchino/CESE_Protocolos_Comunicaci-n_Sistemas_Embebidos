@@ -3,12 +3,13 @@
  *
  *  Created on: Jun 5, 2022
  *      Author: gianfranco
+ *
+ *  Driver documentation:
+ *  - https://github.com/gtalocchino/CESE_Protocolos_Comunicacion_Sistemas_Embebidos
  */
 
 #ifndef PCF8574_INC_PCF8574_H_
 #define PCF8574_INC_PCF8574_H_
-
-#include <stdint.h>
 
 
 /*!
@@ -17,6 +18,7 @@
 typedef enum {
 	PCF8574_OK,
 	PCF8574_ERROR,
+	PCF8574_BUSY
 } pcf8574_status;
 
 /*!
@@ -61,20 +63,20 @@ typedef struct {
 
 
 /*!
- * @brief Initializes the PCF8574 module and internal state.
+ * @brief Initializes the controller and its internal state
  *
- * This function configures the pins, an I2C peripheral and 
- * the interrupts required for operation.
+ * This function configures the pins, the I2C bus and the interrupts
+ * required for operation.
  *
  * @param config PCF8574 configure structure.
  */
 pcf8574_status PCF8574_init(pcf8574_config *config);
 
 /*!
- * @brief Changes the status of a pin.
+ * @brief Sets the state of a pin
  *
- * This function changes the status of a pin. The pin must be previously 
- * configured as an output.
+ * This function sets the state of a pin. The pin must be previously
+ * configured as an output. Pins configured as input cannot be set.
  *
  * @param pin PCF8574 pin enumeration.
  * @param pin_state PCF8574 pin state enumeration.
@@ -82,19 +84,41 @@ pcf8574_status PCF8574_init(pcf8574_config *config);
 pcf8574_status PCF8574_pin_write(pcf8574_pin pin, pcf8574_pin_state pin_state);
 
 /*!
- * @brief Reads the status of a pin.
+ * @brief Returns the state of a pin.
  *
- * This function reads the status of a pin.
+ * This function returns the state of a pin.
  *
  * @param pin PCF8574 pin enumeration.
  * @retval PCF8574 pin state enumeration.
  */
 pcf8574_pin_state PCF8574_pin_read(pcf8574_pin pin);
 
-void PCF8574_interrupt_hook(void);
+/*!
+ * @brief Notifies the driver that there has been a change in the state of a
+ * device pin
+ *
+ *	This function is for internal use and is responsible for notifying the driver
+ *	that there has been a change of state in any pin of the device.
+ *
+ */
+void _PCF8574_interrupt_hook(void);
 
-void PCF8574_rx_transfer_completed_hook(void);
+/*!
+ * @brief Notifies the driver that the I2C receive transfer has been completed.
+ *
+ *	This function is for internal use and is responsible for notifying the driver
+ *	that the receive transfer is complete.
+ *
+ */
+void _PCF8574_rx_transfer_completed_hook(void);
 
-void PCF8574_tx_transfer_completed_hook(void);
+/*!
+ * @brief Notifies the driver that the I2C send transfer has been completed.
+ *
+ *	This function is for internal use and is responsible for notifying the driver
+ *	that the send transfer is complete.
+ *
+ */
+void _PCF8574_tx_transfer_completed_hook(void);
 
 #endif /* PCF8574_INC_PCF8574_H_ */

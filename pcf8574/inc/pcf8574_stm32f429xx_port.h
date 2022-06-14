@@ -13,13 +13,33 @@
 #include "pcf8574.h"
 
 
+/*!
+ * @brief Initializes necessary pins.
+ *
+ * This function initializes necessary pins for driver operation.
+ * The required pins are SDA and SCK for the I2C peripheral and an
+ * input pin capable of generating an interrupt on a falling edge for INT.
+ *
+ */
 void PCF8574_PORT_init_pins(void);
 
+/*!
+ * @brief Initializes the I2C peripheral.
+ *
+ * This function initializes the I2C peripheral needed for
+ * communication with the PCF5874.
+ *
+ */
 pcf8574_status PCF8574_PORT_init_i2c(void);
 
+/*!
+ * @brief Initializes the I2C peripheral.
+ *
+ * This function initializes the I2C peripheral needed for
+ * communication with the PCF5874.
+ *
+ */
 void PCF8574_PORT_enable_interrupts(void);
-
-void PCF8574_PORT_disable_interrupts(void);
 
 pcf8574_status PCF8574_PORT_write_register(uint8_t *);
 

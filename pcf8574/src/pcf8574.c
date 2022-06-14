@@ -3,6 +3,9 @@
  *
  *  Created on: Jun 5, 2022
  *      Author: gianfranco
+ *
+ *  Driver documentation:
+ *  - https://github.com/gtalocchino/CESE_Protocolos_Comunicacion_Sistemas_Embebidos
  */
 
 #include "pcf8574.h"
@@ -21,7 +24,8 @@ typedef struct {
 	bool reset;
 } pcf8574_state;
 
-/* Driver status. */
+
+/* Driver status */
 static pcf8574_state status;
 
 
@@ -29,27 +33,28 @@ static void update_pin_states(void);
 
 
 pcf8574_status PCF8574_init(pcf8574_config *config) {
-	/* Initializing hardware */
+	/* Initializing the hardware */
 	PCF8574_PORT_init_pins();
 	PCF8574_PORT_init_i2c();
 	PCF8574_PORT_enable_interrupts();
 
-	/* Setting up pin configuration */
+	status.reset = true;	
+	
+	/* Initializing the driver state with the required configuration */
 	uint8_t register_tx = UINT8_MAX;
 	for (pcf8574_pin pin = 0; pin < PCF8574_PIN_COUNT; pin++) {
 		status.pin_states[pin] = config->pin_states[pin];
 		status.pin_directions[pin] = config->pin_directions[pin];
 
 		if (status.pin_directions[pin] == PCF8574_PIN_OUTPUT
-			&& status.pin_states[pin] == PCF8574_PIN_RESET) {
+			 && status.pin_states[pin] == PCF8574_PIN_RESET) {
 			register_tx &= ~(1u << pin);
 		}
 	}
 
+	/* Writing the required configuration to the device */
 	status.register_tx = register_tx;
-	status.register_rx = register_tx;
-
-	/* Writing configuration to the device. */
+	status.busy = true;
 	pcf8574_status write_status = PCF8574_PORT_write_register(&status.register_tx);
 
 	return write_status;
@@ -57,18 +62,18 @@ pcf8574_status PCF8574_init(pcf8574_config *config) {
 
 pcf8574_status PCF8574_pin_write(pcf8574_pin pin, pcf8574_pin_state pin_state) {
 	if (status.busy) {
-		/* The I2C bus is busy. */
-		return PCF8574_ERROR;
+		/* The I2C bus is busy */
+		return PCF8574_BUSY;
 	}
 
 	if (status.pin_directions[pin] != PCF8574_PIN_OUTPUT) {
-		/* The pins configured as inputs cannot be written to. */
+		/* Cannot set a value on a pin configured as an input */
 		return PCF8574_ERROR;
 	}
 
 	if (!status.pin_states_updated) {
+	   /* Driver status variable is not updated */
 		update_pin_states();
-		status.pin_states_updated = true;
 	}
 
 	status.pin_states[pin] = pin_state;
@@ -76,48 +81,60 @@ pcf8574_status PCF8574_pin_write(pcf8574_pin pin, pcf8574_pin_state pin_state) {
 	uint8_t register_tx = UINT8_MAX;
 	for (pcf8574_pin pin = 0; pin < PCF8574_PIN_COUNT; pin++) {
 		if (status.pin_directions[pin] == PCF8574_PIN_OUTPUT
-			&& status.pin_states[pin] == PCF8574_PIN_RESET) {
+			 && status.pin_states[pin] == PCF8574_PIN_RESET) {
 			register_tx &= ~(1u << pin);
 		}
 	}
 
-	/* Writing configuration to the device. */
+	/* Writing the required configuration to the device */
 	status.register_tx = register_tx;
+	status.busy = true;
 	pcf8574_status write_status = PCF8574_PORT_write_register(&status.register_tx);
 
 	return write_status;
 }
 
 pcf8574_pin_state PCF8574_pin_read(pcf8574_pin pin) {
+	if (status.reset) {
+		/* The device has not been read after a reset yet */
+		return PCF8574_BUSY;
+	}
+
 	if (!status.pin_states_updated) {
 		update_pin_states();
-		status.pin_states_updated = true;
 	}
 
 	return status.pin_states[pin];
 }
 
-void PCF8574_interrupt_hook(void) {
-	/* The device detected a level change on some pin.
-	 * This function triggers a reading of the device register.
+void _PCF8574_interrupt_hook(void) {
+	/*
+	 * The PCF8574 detected a change on some of its pins.
+	 * This function triggers a read of the device
 	 */
 	status.busy = true;
 	PCF8574_PORT_read_register(&status.register_rx);
 }
 
-void PCF8574_rx_transfer_completed_hook(void) {
-	/* The reading of the device register has been completed.
-	 * The driver status is updated.
-	 */
-	status.pin_states_updated = false;
+void _PCF8574_rx_transfer_completed_hook(void) {
+   /* Device reading is complete. The driver status is updated */
+   status.pin_states_updated = false;
 	status.busy = false;
+
+	if (status.reset) {
+      status.reset = false;
+	}
 }
 
-void PCF8574_tx_transfer_completed_hook(void) {
-	/* The writing of the device register has been completed.
-	 * The driver status is updated.
-	 */
+void _PCF8574_tx_transfer_completed_hook(void) {
+	/* Device writing is complete. The driver status is updated */
 	status.busy = false;
+
+	if (status.reset) {
+		/* Triggering a device read after a reset */
+		status.busy = true;
+		PCF8574_PORT_read_register(&status.register_rx);
+	}
 }
 
 static void update_pin_states(void) {
@@ -129,4 +146,6 @@ static void update_pin_states(void) {
 			status.pin_states[pin] = PCF8574_PIN_RESET;
 		}
 	}
+
+   status.pin_states_updated = true;
 }
