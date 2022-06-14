@@ -30,6 +30,7 @@ static pcf8574_state status;
 
 
 static void update_pin_states(void);
+static uint8_t get_register_tx(void);
 
 
 pcf8574_status PCF8574_init(pcf8574_config *config) {
@@ -78,16 +79,8 @@ pcf8574_status PCF8574_pin_write(pcf8574_pin pin, pcf8574_pin_state pin_state) {
 
 	status.pin_states[pin] = pin_state;
 
-	uint8_t register_tx = UINT8_MAX;
-	for (pcf8574_pin pin = 0; pin < PCF8574_PIN_COUNT; pin++) {
-		if (status.pin_directions[pin] == PCF8574_PIN_OUTPUT
-			 && status.pin_states[pin] == PCF8574_PIN_RESET) {
-			register_tx &= ~(1u << pin);
-		}
-	}
-
 	/* Writing the required configuration to the device */
-	status.register_tx = register_tx;
+	status.register_tx = get_register_tx();
 	status.busy = true;
 	pcf8574_status write_status = PCF8574_PORT_write_register(&status.register_tx);
 
@@ -107,7 +100,33 @@ pcf8574_pin_state PCF8574_pin_read(pcf8574_pin pin) {
 	return status.pin_states[pin];
 }
 
-void _PCF8574_interrupt_hook(void) {
+pcf8574_status PCF8574_pin_reinit(pcf8574_pin pin, pcf8574_pin_direction pin_direction,
+									 pcf8574_pin_state pin_state) {
+	if (status.busy) {
+		/* The I2C bus is busy */
+		return PCF8574_BUSY;
+	}
+
+	if (!status.pin_states_updated) {
+		update_pin_states();
+	}
+
+	status.pin_states[pin] = pin_state;
+	status.pin_directions[pin] = pin_direction;
+
+	if (status.pin_directions[pin] == PCF8574_PIN_INPUT) {
+		status.reset = true;
+	}
+
+	/* Writing the required configuration to the device */
+	status.register_tx = get_register_tx();
+	status.busy = true;
+	pcf8574_status write_status = PCF8574_PORT_write_register(&status.register_tx);
+
+	return write_status;
+}
+
+void _PCF8574_interrupt_callback(void) {
 	/*
 	 * The PCF8574 detected a change on some of its pins.
 	 * This function triggers a read of the device
@@ -116,7 +135,7 @@ void _PCF8574_interrupt_hook(void) {
 	PCF8574_PORT_read_register(&status.register_rx);
 }
 
-void _PCF8574_rx_transfer_completed_hook(void) {
+void _PCF8574_rx_transfer_completed_callback(void) {
    /* Device reading is complete. The driver status is updated */
    status.pin_states_updated = false;
 	status.busy = false;
@@ -126,7 +145,7 @@ void _PCF8574_rx_transfer_completed_hook(void) {
 	}
 }
 
-void _PCF8574_tx_transfer_completed_hook(void) {
+void _PCF8574_tx_transfer_completed_callback(void) {
 	/* Device writing is complete. The driver status is updated */
 	status.busy = false;
 
@@ -148,4 +167,16 @@ static void update_pin_states(void) {
 	}
 
    status.pin_states_updated = true;
+}
+
+static uint8_t get_register_tx(void) {
+	uint8_t register_tx = UINT8_MAX;
+	for (pcf8574_pin pin = 0; pin < PCF8574_PIN_COUNT; pin++) {
+		if (status.pin_directions[pin] == PCF8574_PIN_OUTPUT
+			&& status.pin_states[pin] == PCF8574_PIN_RESET) {
+			register_tx &= ~(1u << pin);
+		}
+	}
+
+	return register_tx;
 }

@@ -94,6 +94,18 @@ pcf8574_status PCF8574_pin_write(pcf8574_pin pin, pcf8574_pin_state pin_state);
 pcf8574_pin_state PCF8574_pin_read(pcf8574_pin pin);
 
 /*!
+ * @brief Reinits a pin.
+ *
+ * This function allows you to change the configuration for a pin
+ * after initialization.
+ *
+ * @param pin PCF8574 pin enumeration.
+ * @retval PCF8574 pin state enumeration.
+ */
+pcf8574_status PCF8574_pin_reinit(pcf8574_pin pin, pcf8574_pin_direction pin_direction,
+									 pcf8574_pin_state pin_state);
+
+/*!
  * @brief Notifies the driver that there has been a change in the state of a
  * device pin
  *
@@ -101,7 +113,7 @@ pcf8574_pin_state PCF8574_pin_read(pcf8574_pin pin);
  *	that there has been a change of state in any pin of the device.
  *
  */
-void _PCF8574_interrupt_hook(void);
+void _PCF8574_interrupt_callback(void);
 
 /*!
  * @brief Notifies the driver that the I2C receive transfer has been completed.
@@ -110,7 +122,7 @@ void _PCF8574_interrupt_hook(void);
  *	that the receive transfer is complete.
  *
  */
-void _PCF8574_rx_transfer_completed_hook(void);
+void _PCF8574_rx_transfer_completed_callback(void);
 
 /*!
  * @brief Notifies the driver that the I2C send transfer has been completed.
@@ -119,6 +131,6 @@ void _PCF8574_rx_transfer_completed_hook(void);
  *	that the send transfer is complete.
  *
  */
-void _PCF8574_tx_transfer_completed_hook(void);
+void _PCF8574_tx_transfer_completed_callback(void);
 
 #endif /* PCF8574_INC_PCF8574_H_ */

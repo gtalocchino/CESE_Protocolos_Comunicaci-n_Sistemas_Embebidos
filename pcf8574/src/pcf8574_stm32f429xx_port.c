@@ -107,14 +107,14 @@ void I2C2_EV_IRQHandler(void) {
 }
 
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c) {
-	PCF8574_rx_transfer_completed_hook();
+	_PCF8574_rx_transfer_completed_callback();
 }
 
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {
-	PCF8574_tx_transfer_completed_hook();
+	_PCF8574_tx_transfer_completed_callback();
 }
 
 void EXTI2_IRQHandler(void) {
 	__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_2);
-	PCF8574_interrupt_hook();
+	_PCF8574_interrupt_callback();
 }
