@@ -48,7 +48,7 @@ pcf8574_status PCF8574_init(pcf8574_config *config) {
       status.pin_directions[pin] = config->pin_directions[pin];
 
       if (status.pin_directions[pin] == PCF8574_PIN_OUTPUT
-            && status.pin_states[pin] == PCF8574_PIN_RESET) {
+          && status.pin_states[pin] == PCF8574_PIN_RESET) {
          register_tx &= ~(1u << pin);
       }
    }
@@ -173,7 +173,7 @@ static uint8_t get_register_tx(void) {
    uint8_t register_tx = UINT8_MAX;
    for (pcf8574_pin pin = 0; pin < PCF8574_PIN_COUNT; pin++) {
       if (status.pin_directions[pin] == PCF8574_PIN_OUTPUT
-            && status.pin_states[pin] == PCF8574_PIN_RESET) {
+          && status.pin_states[pin] == PCF8574_PIN_RESET) {
          register_tx &= ~(1u << pin);
       }
    }
