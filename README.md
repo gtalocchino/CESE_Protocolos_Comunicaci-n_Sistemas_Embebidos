@@ -29,10 +29,10 @@ pcf8574/
 
 /* Initializing struct with required configuration. Undefined pins remain as input */
 pcf8574_config config = {
-			.pin_states[PCF8574_PIN_0] = PCF8574_PIN_RESET,
-			.pin_directions[PCF8574_PIN_0] = PCF8574_PIN_OUTPUT,
+	.pin_states[PCF8574_PIN_0] = PCF8574_PIN_RESET,
+	.pin_directions[PCF8574_PIN_0] = PCF8574_PIN_OUTPUT,
 
-			.pin_directions[PCF8574_PIN_1] = PCF8574_PIN_INPUT,
+	.pin_directions[PCF8574_PIN_1] = PCF8574_PIN_INPUT,
 };
 
 /* Initializing the driver */ 
